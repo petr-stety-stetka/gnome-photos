@@ -60,6 +60,9 @@ photos_source_manager_get_filter (PhotosBaseManager *mngr, gint flags)
 
   if (flags & PHOTOS_QUERY_FLAGS_SEARCH)
     source = photos_base_manager_get_active_object (mngr);
+  else if (flags & PHOTOS_QUERY_FLAGS_IMPORT)
+	  source = photos_base_manager_get_object_by_id (mngr, PHOTOS_SOURCE_STOCK_IMPORT); //PROBLEM photos_filterable_get_id: assertion 'PHOTOS_IS_FILTERABLE (self)' failed
+                                                                                      //        photos_filterable_get_filter: assertion 'PHOTOS_IS_FILTERABLE (iface)' failed
 	else
     source = photos_base_manager_get_object_by_id (mngr, PHOTOS_SOURCE_STOCK_ALL);
 
