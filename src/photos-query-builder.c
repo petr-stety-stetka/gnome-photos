@@ -348,6 +348,86 @@ photos_query_builder_update_mtime_query (PhotosSearchContextState *state, const 
 }
 
 
+//TODO IMPORT this code is only for my testing now, must be rewritten.
+gchar *
+photos_query_builder_filter_import (void)
+{
+	g_print("photos_query_builder_filter_import");
+
+  GSettings *settings;
+  GString *tracker_filter;
+  gchar *desktop_uri;
+  gchar *download_uri;
+  gchar *export_path;
+  gchar *export_uri;
+  gchar *import_uri;
+  gchar *filter;
+  const gchar *path;
+  gchar *pictures_uri;
+  gchar **tracker_dirs;
+  guint i;
+
+  settings = g_settings_new (TRACKER_SCHEMA);
+  tracker_dirs = g_settings_get_strv (settings, TRACKER_KEY_RECURSIVE_DIRECTORIES);
+  tracker_filter = g_string_new ("");
+
+  for (i = 0; tracker_dirs[i] != NULL; i++)
+  {
+    gchar *tracker_uri;
+
+	  if (tracker_dirs[i][0] == '&' || tracker_dirs[i][0] == '$')
+			continue;
+
+		tracker_uri = photos_utils_convert_path_to_uri (tracker_dirs[i]);
+		g_string_append_printf (tracker_filter, " || fn:contains (nie:url (?urn), '%s')", tracker_uri);
+		g_free (tracker_uri);
+	}
+
+	path = g_get_user_special_dir (G_USER_DIRECTORY_DESKTOP);
+	desktop_uri = photos_utils_convert_path_to_uri (path);
+
+	path = g_get_user_special_dir (G_USER_DIRECTORY_DOWNLOAD);
+	download_uri = photos_utils_convert_path_to_uri (path);
+
+	path = g_get_user_special_dir (G_USER_DIRECTORY_PICTURES);
+	pictures_uri = photos_utils_convert_path_to_uri (path);
+
+	export_path = g_build_filename (path, PHOTOS_EXPORT_SUBPATH, NULL);
+	export_uri = photos_utils_convert_path_to_uri (export_path);
+
+	//TODO IMPORT only for my testing
+	import_uri = g_strdup_printf("file:///run/media/pstetka/084D-3210/sta%%C5%%BEen%%C3%%BD%%20soubor.jpg");
+
+	filter = g_strdup_printf ("(((fn:contains (nie:url (?urn), '%s')"
+		                          "   || fn:contains (nie:url (?urn), '%s')"
+		                          "   || fn:contains (nie:url (?urn), '%s')"
+		                          "   || fn:contains (nie:url (?urn), '%s')"
+		                          "   %s)"
+		                          "  && !fn:contains (nie:url (?urn), '%s'))"
+		                          " || fn:starts-with (nao:identifier (?urn), '%s')"
+		                          " || (?urn = nfo:image-category-screenshot))",
+                          desktop_uri,
+                          download_uri,
+                          import_uri,
+                          pictures_uri,
+                          tracker_filter->str,
+                          export_uri,
+                          PHOTOS_QUERY_LOCAL_COLLECTIONS_IDENTIFIER);
+	g_free (desktop_uri);
+	g_free (download_uri);
+	g_free (export_path);
+	g_free (export_uri);
+	g_free (import_uri);
+	g_free (pictures_uri);
+	g_strfreev (tracker_dirs);
+	g_string_free (tracker_filter, TRUE);
+	g_object_unref(settings);
+
+	return filter;
+}
+
+
+
 gchar *
 photos_query_builder_filter_local (void)
 {
@@ -368,29 +448,29 @@ photos_query_builder_filter_local (void)
   tracker_filter = g_string_new ("");
 
   for (i = 0; tracker_dirs[i] != NULL; i++)
-    {
+  {
       gchar *tracker_uri;
 
-      /* ignore special XDG placeholders, since we handle those internally */
-      if (tracker_dirs[i][0] == '&' || tracker_dirs[i][0] == '$')
-        continue;
+		/* ignore special XDG placeholders, since we handle those internally */
+		if (tracker_dirs[i][0] == '&' || tracker_dirs[i][0] == '$')
+			continue;
 
-      tracker_uri = photos_utils_convert_path_to_uri (tracker_dirs[i]);
-      g_string_append_printf (tracker_filter, " || fn:contains (nie:url (?urn), '%s')", tracker_uri);
-      g_free (tracker_uri);
-    }
+		tracker_uri = photos_utils_convert_path_to_uri (tracker_dirs[i]);
+		g_string_append_printf (tracker_filter, " || fn:contains (nie:url (?urn), '%s')", tracker_uri);
+		g_free (tracker_uri);
+	}
 
-  path = g_get_user_special_dir (G_USER_DIRECTORY_DESKTOP);
-  desktop_uri = photos_utils_convert_path_to_uri (path);
+	path = g_get_user_special_dir (G_USER_DIRECTORY_DESKTOP);
+	desktop_uri = photos_utils_convert_path_to_uri (path);
 
-  path = g_get_user_special_dir (G_USER_DIRECTORY_DOWNLOAD);
-  download_uri = photos_utils_convert_path_to_uri (path);
+	path = g_get_user_special_dir (G_USER_DIRECTORY_DOWNLOAD);
+	download_uri = photos_utils_convert_path_to_uri (path);
 
-  path = g_get_user_special_dir (G_USER_DIRECTORY_PICTURES);
-  pictures_uri = photos_utils_convert_path_to_uri (path);
+	path = g_get_user_special_dir (G_USER_DIRECTORY_PICTURES);
+	pictures_uri = photos_utils_convert_path_to_uri (path);
 
-  export_path = g_build_filename (path, PHOTOS_EXPORT_SUBPATH, NULL);
-  export_uri = photos_utils_convert_path_to_uri (export_path);
+	export_path = g_build_filename (path, PHOTOS_EXPORT_SUBPATH, NULL);
+	export_uri = photos_utils_convert_path_to_uri (export_path);
 
   filter = g_strdup_printf ("(((fn:contains (nie:url (?urn), '%s')"
                             "   || fn:contains (nie:url (?urn), '%s')"
@@ -414,5 +494,5 @@ photos_query_builder_filter_local (void)
   g_string_free (tracker_filter, TRUE);
   g_object_unref(settings);
 
-  return filter;
+	return filter;
 }

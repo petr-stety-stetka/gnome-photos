@@ -587,6 +587,7 @@ photos_preview_view_window_mode_changed (PhotosPreviewView *self, PhotosWindowMo
     case PHOTOS_WINDOW_MODE_FAVORITES:
     case PHOTOS_WINDOW_MODE_OVERVIEW:
     case PHOTOS_WINDOW_MODE_SEARCH:
+    case PHOTOS_WINDOW_MODE_IMPORT:
       gtk_revealer_set_reveal_child (GTK_REVEALER (self->revealer), FALSE);
       photos_edit_palette_hide_details (PHOTOS_EDIT_PALETTE (self->palette));
       photos_preview_nav_buttons_hide (self->nav_buttons);

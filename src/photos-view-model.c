@@ -41,6 +41,8 @@
 #include "photos-tracker-overview-controller.h"
 #include "photos-tracker-search-controller.h"
 #include "photos-view-model.h"
+#include "photos-offset-import-controller.h"
+#include "photos-tracker-import-controller.h"
 
 
 struct _PhotosViewModel
@@ -325,6 +327,11 @@ photos_view_model_constructed (GObject *object)
       self->offset_cntrlr = photos_offset_search_controller_dup_singleton ();
       self->trk_cntrlr = photos_tracker_search_controller_dup_singleton ();
       break;
+
+      case PHOTOS_WINDOW_MODE_IMPORT:
+        self->offset_cntrlr = photos_offset_import_controller_dup_singleton ();
+        self->trk_cntrlr = photos_tracker_import_controller_dup_singleton ();
+        break;
 
     case PHOTOS_WINDOW_MODE_NONE:
     case PHOTOS_WINDOW_MODE_EDIT:

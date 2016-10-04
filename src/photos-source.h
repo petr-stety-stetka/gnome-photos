@@ -42,6 +42,8 @@ G_BEGIN_DECLS
 
 #define PHOTOS_SOURCE_STOCK_ALL   "all"
 #define PHOTOS_SOURCE_STOCK_LOCAL "local"
+#define PHOTOS_SOURCE_STOCK_IMPORT "import"
+
 
 typedef struct _PhotosSource      PhotosSource;
 typedef struct _PhotosSourceClass PhotosSourceClass;

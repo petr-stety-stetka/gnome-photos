@@ -97,6 +97,8 @@ photos_source_get_filter (PhotosFilterable *iface)
 
   if (g_strcmp0 (self->id, PHOTOS_SOURCE_STOCK_LOCAL) == 0)
     return photos_query_builder_filter_local ();
+  else if (g_strcmp0 (self->id, PHOTOS_SOURCE_STOCK_IMPORT) == 0)
+    return photos_query_builder_filter_import () ;
 
   return photos_source_build_filter_resource (self);
 }

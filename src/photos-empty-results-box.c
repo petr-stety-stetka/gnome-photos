@@ -188,6 +188,7 @@ photos_empty_results_box_constructed (GObject *object)
 
     case PHOTOS_WINDOW_MODE_OVERVIEW:
     case PHOTOS_WINDOW_MODE_SEARCH:
+    case PHOTOS_WINDOW_MODE_IMPORT:
       image = gtk_image_new_from_icon_name (PHOTOS_ICON_PHOTOS_SYMBOLIC, GTK_ICON_SIZE_INVALID);
       label = g_strconcat ("<b><span size=\"large\">", _("No Photos Found"), "</span></b>", NULL);
       break;
@@ -224,6 +225,7 @@ photos_empty_results_box_constructed (GObject *object)
 
     case PHOTOS_WINDOW_MODE_FAVORITES:
     case PHOTOS_WINDOW_MODE_SEARCH:
+    case PHOTOS_WINDOW_MODE_IMPORT:
       gtk_widget_set_valign (title_label, GTK_ALIGN_CENTER);
       break;
 

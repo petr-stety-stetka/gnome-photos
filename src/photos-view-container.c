@@ -44,6 +44,8 @@
 #include "photos-utils.h"
 #include "photos-view-container.h"
 #include "photos-view-model.h"
+#include "photos-tracker-import-controller.h"
+#include "photos-offset-import-controller.h"
 
 
 struct _PhotosViewContainer
@@ -235,7 +237,8 @@ photos_view_container_window_mode_changed (PhotosViewContainer *self,
   if (mode == PHOTOS_WINDOW_MODE_COLLECTIONS
       || mode == PHOTOS_WINDOW_MODE_FAVORITES
       || mode == PHOTOS_WINDOW_MODE_OVERVIEW
-      || mode == PHOTOS_WINDOW_MODE_SEARCH)
+      || mode == PHOTOS_WINDOW_MODE_SEARCH
+      || mode == PHOTOS_WINDOW_MODE_IMPORT)
     photos_view_container_connect_view (self);
 }
 
@@ -334,6 +337,11 @@ photos_view_container_constructed (GObject *object)
       self->trk_cntrlr = photos_tracker_search_controller_dup_singleton ();
       self->offset_cntrlr = photos_offset_search_controller_dup_singleton ();
       break;
+
+      case PHOTOS_WINDOW_MODE_IMPORT:
+        self->trk_cntrlr = photos_tracker_import_controller_dup_singleton ();
+        self->offset_cntrlr = photos_offset_import_controller_dup_singleton ();
+        break;
 
     case PHOTOS_WINDOW_MODE_NONE:
     case PHOTOS_WINDOW_MODE_EDIT:

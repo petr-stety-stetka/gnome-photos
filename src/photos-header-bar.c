@@ -32,6 +32,7 @@ struct _PhotosHeaderBar
 {
   GtkHeaderBar parent_instance;
   GtkWidget *selection_menu;
+  GtkWidget *import_menu;
   GtkWidget *stack_switcher;
   PhotosHeaderBarMode mode;
 };
@@ -63,6 +64,7 @@ photos_header_bar_dispose (GObject *object)
   PhotosHeaderBar *self = PHOTOS_HEADER_BAR (object);
 
   g_clear_object (&self->selection_menu);
+  g_clear_object (&self->import_menu);
   g_clear_object (&self->stack_switcher);
 
   G_OBJECT_CLASS (photos_header_bar_parent_class)->dispose (object);
@@ -133,17 +135,26 @@ photos_header_bar_set_mode (PhotosHeaderBar *self, PhotosHeaderBarMode mode)
   switch (self->mode)
     {
     case PHOTOS_HEADER_BAR_MODE_NORMAL:
-      gtk_style_context_remove_class (context, "selection-mode");
+      gtk_style_context_remove_class (context, "import-mode");
+        gtk_style_context_remove_class (context, "selection-mode");
       custom_title = self->stack_switcher;
       break;
 
     case PHOTOS_HEADER_BAR_MODE_SELECTION:
-      gtk_style_context_add_class (context, "selection-mode");
+      gtk_style_context_remove_class (context, "import-mode");
+        gtk_style_context_add_class (context, "selection-mode");
       custom_title = self->selection_menu;
       break;
 
-    case PHOTOS_HEADER_BAR_MODE_STANDALONE:
+    case PHOTOS_HEADER_BAR_MODE_IMPORT:
       gtk_style_context_remove_class (context, "selection-mode");
+        gtk_style_context_add_class (context, "import-mode");
+        custom_title = self->import_menu;
+      break;
+
+    case PHOTOS_HEADER_BAR_MODE_STANDALONE:
+      gtk_style_context_remove_class (context, "import-mode");
+        gtk_style_context_remove_class (context, "selection-mode");
       break;
 
     case PHOTOS_HEADER_BAR_MODE_NONE:
@@ -175,6 +186,25 @@ photos_header_bar_set_selection_menu (PhotosHeaderBar *self, GtkButton *selectio
     gtk_header_bar_set_custom_title (GTK_HEADER_BAR (self), self->selection_menu);
 }
 
+void
+photos_header_bar_set_import_menu (PhotosHeaderBar *self, GtkButton *import_menu)
+{
+  if (self->import_menu == GTK_WIDGET (import_menu))
+    return;
+
+  g_clear_object (&self->import_menu);
+  if (import_menu != NULL)
+  {
+    GtkStyleContext *context;
+
+    self->import_menu = g_object_ref_sink (import_menu);
+    context = gtk_widget_get_style_context (self->import_menu);
+    gtk_style_context_add_class (context, "import-menu");
+  }
+
+  if (self->mode == PHOTOS_HEADER_BAR_MODE_IMPORT)
+    gtk_header_bar_set_custom_title (GTK_HEADER_BAR (self), self->import_menu);
+}
 
 void
 photos_header_bar_set_stack (PhotosHeaderBar *self, GtkStack *stack)

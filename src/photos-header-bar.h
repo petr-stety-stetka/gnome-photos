@@ -45,6 +45,7 @@ typedef enum
   PHOTOS_HEADER_BAR_MODE_NONE,
   PHOTOS_HEADER_BAR_MODE_NORMAL,
   PHOTOS_HEADER_BAR_MODE_SELECTION,
+  PHOTOS_HEADER_BAR_MODE_IMPORT,
   PHOTOS_HEADER_BAR_MODE_STANDALONE
 } PhotosHeaderBarMode;
 
@@ -61,6 +62,9 @@ void                   photos_header_bar_set_mode               (PhotosHeaderBar
 
 void                   photos_header_bar_set_selection_menu     (PhotosHeaderBar *self,
                                                                  GtkButton *selection_menu);
+
+void                   photos_header_bar_set_import_menu     (PhotosHeaderBar *self,
+                                                                 GtkButton *import_menu);
 
 void                   photos_header_bar_set_stack              (PhotosHeaderBar *self, GtkStack *stack);
 

@@ -60,11 +60,13 @@ photos_source_manager_get_filter (PhotosBaseManager *mngr, gint flags)
 
   if (flags & PHOTOS_QUERY_FLAGS_SEARCH)
     source = photos_base_manager_get_active_object (mngr);
-  else
+	else
     source = photos_base_manager_get_object_by_id (mngr, PHOTOS_SOURCE_STOCK_ALL);
 
   id = photos_filterable_get_id (PHOTOS_FILTERABLE (source));
   if (g_strcmp0 (id, PHOTOS_SOURCE_STOCK_ALL) == 0)
+    filter = photos_base_manager_get_all_filter (mngr);
+  else if (g_strcmp0 (id, PHOTOS_SOURCE_STOCK_IMPORT) == 0)
     filter = photos_base_manager_get_all_filter (mngr);
   else
     filter = photos_filterable_get_filter (PHOTOS_FILTERABLE (source));
@@ -176,6 +178,10 @@ photos_source_manager_init (PhotosSourceManager *self)
   g_object_unref (source);
 
   source = photos_source_new (PHOTOS_SOURCE_STOCK_LOCAL, _("Local"), TRUE);
+  photos_base_manager_add_object (PHOTOS_BASE_MANAGER (self), G_OBJECT (source));
+  g_object_unref (source);
+
+  source = photos_source_new (PHOTOS_SOURCE_STOCK_LOCAL, _("Import"), TRUE);
   photos_base_manager_add_object (PHOTOS_BASE_MANAGER (self), G_OBJECT (source));
   g_object_unref (source);
 

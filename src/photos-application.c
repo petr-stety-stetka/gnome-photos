@@ -62,6 +62,7 @@
 #include "photos-share-point-manager.h"
 #include "photos-tracker-extract-priority.h"
 #include "photos-utils.h"
+#include "photos-import-notification.h"
 
 
 struct _PhotosApplication
@@ -84,6 +85,7 @@ struct _PhotosApplication
   GSimpleAction *edit_done_action;
   GSimpleAction *edit_revert_action;
   GSimpleAction *fs_action;
+  GSimpleAction *import_action;
   GSimpleAction *gear_action;
   GSimpleAction *insta_action;
   GSimpleAction *load_next_action;
@@ -103,6 +105,7 @@ struct _PhotosApplication
   GSimpleAction *set_ss_action;
   GSimpleAction *share_action;
   GSimpleAction *sharpen_action;
+  GVolumeMonitor *volume_monitor;
   GtkWidget *main_window;
   PhotosBaseManager *shr_pnt_mngr;
   PhotosCameraCache *camera_cache;
@@ -798,6 +801,40 @@ photos_application_edit_current (PhotosApplication *self)
 
   photos_base_item_pipeline_snapshot (item);
   photos_mode_controller_set_window_mode (self->state->mode_cntrlr, PHOTOS_WINDOW_MODE_EDIT);
+}
+
+
+static void
+photos_application_import_notification (PhotosApplication *self, GMount *mount)
+{
+  GNotification *notification;
+  gchar *notification_id;
+  gchar *notification_name;
+
+	if(gtk_window_is_active(GTK_WINDOW(self->main_window))) {
+    photos_import_notification_new(mount);
+  } else {
+    //TODO IMPORT we must call tracker_miner_manager_index_file here! Or in import action
+    notification_name = g_strdup_printf ("Import photos from %s?" , g_mount_get_name(mount));
+    notification_id = g_strdup_printf ("import-photos-%s", g_mount_get_uuid(mount));
+
+    notification = g_notification_new (_("Import Photos"));
+    g_notification_set_body (notification, notification_name);
+    g_notification_add_button(notification, _("Import"), "app.import");
+
+    g_application_send_notification (G_APPLICATION(self), notification_id, notification);
+
+    g_object_unref (notification);
+    g_free(notification_name);
+    g_free(notification_id);
+  }
+}
+
+static void
+photos_application_import (PhotosApplication *self)
+{
+  gtk_window_present(GTK_WINDOW(self->main_window));
+  photos_mode_controller_set_window_mode (self->state->mode_cntrlr, PHOTOS_WINDOW_MODE_IMPORT);
 }
 
 
@@ -1729,6 +1766,10 @@ photos_application_startup (GApplication *application)
   g_signal_connect_swapped (self->edit_action, "activate", G_CALLBACK (photos_application_edit_current), self);
   g_action_map_add_action (G_ACTION_MAP (self), G_ACTION (self->edit_action));
 
+  self->import_action = g_simple_action_new ("import", NULL);
+  g_signal_connect_swapped (self->import_action, "activate", G_CALLBACK (photos_application_import), self);
+  g_action_map_add_action (G_ACTION_MAP (self), G_ACTION (self->import_action));
+
   self->edit_done_action = g_simple_action_new ("edit-done", NULL);
   g_action_map_add_action (G_ACTION_MAP (self), G_ACTION (self->edit_done_action));
 
@@ -1952,7 +1993,6 @@ photos_application_finalize (GObject *object)
   G_OBJECT_CLASS (photos_application_parent_class)->finalize (object);
 }
 
-
 static void
 photos_application_init (PhotosApplication *self)
 {
@@ -1966,6 +2006,12 @@ photos_application_init (PhotosApplication *self)
   g_signal_connect_swapped (self->search_provider,
                             "launch-search",
                             G_CALLBACK (photos_application_launch_search),
+                            self);
+
+  self->volume_monitor = g_volume_monitor_get ();
+  g_signal_connect_swapped (self->volume_monitor,
+                            "mount-added",
+                            G_CALLBACK(photos_application_import_notification),
                             self);
 
   self->state = photos_search_context_state_new (PHOTOS_SEARCH_CONTEXT (self));

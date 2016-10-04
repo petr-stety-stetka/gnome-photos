@@ -62,6 +62,8 @@ PhotosQuery  *photos_query_builder_update_mtime_query (PhotosSearchContextState 
 
 gchar        *photos_query_builder_filter_local        (void);
 
+gchar        *photos_query_builder_filter_import        (void);
+
 G_END_DECLS
 
 #endif /* PHOTOS_QUERY_BUILDER */

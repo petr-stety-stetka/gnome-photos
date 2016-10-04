@@ -167,6 +167,7 @@ photos_main_window_go_back (PhotosMainWindow *self)
   switch (mode)
     {
     case PHOTOS_WINDOW_MODE_PREVIEW:
+    case PHOTOS_WINDOW_MODE_IMPORT:
       photos_mode_controller_go_back (self->mode_cntrlr);
       break;
 
@@ -229,6 +230,13 @@ photos_main_window_handle_key_edit (PhotosMainWindow *self, GdkEventKey *event)
   return handled;
 }
 
+static gboolean
+photos_main_window_handle_key_import (PhotosMainWindow *self, GdkEventKey *event)
+{
+  gboolean handled = FALSE;
+
+  return handled;
+}
 
 static gboolean
 photos_main_window_handle_key_overview (PhotosMainWindow *self, GdkEventKey *event)
@@ -309,6 +317,9 @@ photos_main_window_key_press_event (GtkWidget *widget, GdkEventKey *event)
 
     case PHOTOS_WINDOW_MODE_PREVIEW:
       handled = photos_main_window_handle_key_preview (self, event);
+      break;
+    case PHOTOS_WINDOW_MODE_IMPORT:
+      handled = photos_main_window_handle_key_import (self, event);
       break;
 
     case PHOTOS_WINDOW_MODE_COLLECTIONS:

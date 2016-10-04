@@ -793,7 +793,7 @@ photos_item_manager_add_item_for_mode (PhotosItemManager *self, PhotosWindowMode
 
   is_collection = photos_item_manager_cursor_is_collection (cursor);
   g_return_if_fail ((is_collection && (mode == PHOTOS_WINDOW_MODE_COLLECTIONS || mode == PHOTOS_WINDOW_MODE_SEARCH))
-                    || (!is_collection && (mode != PHOTOS_WINDOW_MODE_COLLECTIONS || self->active_collection != NULL)));
+                    || (!is_collection && (mode != PHOTOS_WINDOW_MODE_COLLECTIONS || self->active_collection != NULL)) || mode == PHOTOS_WINDOW_MODE_IMPORT);
 
   item_mngr_chld = self->item_mngr_chldrn[mode];
   id = tracker_sparql_cursor_get_string (cursor, PHOTOS_QUERY_COLUMNS_URN, NULL);

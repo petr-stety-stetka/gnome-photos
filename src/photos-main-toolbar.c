@@ -54,6 +54,7 @@ struct _PhotosMainToolbar
   GtkWidget *searchbar;
   GtkWidget *selection_button;
   GtkWidget *selection_menu;
+  GtkWidget *import_menu;
   GtkWidget *toolbar;
   PhotosBaseManager *item_mngr;
   PhotosModeController *mode_cntrlr;
@@ -137,6 +138,16 @@ photos_main_toolbar_set_toolbar_title (PhotosMainToolbar *self)
       if (item != NULL)
         primary = g_strdup (photos_base_item_get_name_with_fallback (PHOTOS_BASE_ITEM (item)));
     }
+  else if (window_mode == PHOTOS_WINDOW_MODE_IMPORT)
+  {
+    GtkWidget *label;
+
+    primary = g_markup_printf_escaped ("<b>%s</b>", _("xx Selected"));
+    gtk_button_set_label (GTK_BUTTON (self->import_menu), primary);
+    gtk_button_set_relief(GTK_BUTTON(self->import_menu), GTK_RELIEF_NONE);
+    label = gtk_bin_get_child (GTK_BIN (self->import_menu));
+    gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
+  }
 
   if (selection_mode)
     {
@@ -150,7 +161,8 @@ photos_main_toolbar_set_toolbar_title (PhotosMainToolbar *self)
         }
     }
   else
-    gtk_header_bar_set_title (GTK_HEADER_BAR (self->toolbar), primary);
+    if(window_mode != PHOTOS_WINDOW_MODE_IMPORT)
+      gtk_header_bar_set_title (GTK_HEADER_BAR (self->toolbar), primary);
 
   g_free (primary);
 }
@@ -168,6 +180,19 @@ photos_main_toolbar_add_back_button (PhotosMainToolbar *self)
   return back_button;
 }
 
+static GtkWidget *
+photos_main_toolbar_add_import_button (PhotosMainToolbar *self)
+{
+	GtkWidget *add_button;
+	GtkStyleContext *context;
+
+	add_button = gtk_button_new_with_label ("Add to Photos");
+	gtk_header_bar_pack_end (GTK_HEADER_BAR (self->toolbar), add_button);
+	context = gtk_widget_get_style_context (GTK_WIDGET (add_button));
+	gtk_style_context_add_class (context, "suggested-action");
+
+	return add_button;
+}
 
 static void
 photos_main_toolbar_remote_display_button_clicked (PhotosMainToolbar *self)
@@ -304,6 +329,21 @@ photos_main_toolbar_add_search_button (PhotosMainToolbar *self)
   return search_button;
 }
 
+static GtkWidget *
+photos_main_toolbar_add_import_test_button (PhotosMainToolbar *self)
+{
+  GtkWidget *image;
+  GtkWidget *import_test_button;
+
+  image = gtk_image_new_from_icon_name ("go-bottom-symbolic", GTK_ICON_SIZE_BUTTON);
+  import_test_button = gtk_button_new();
+  gtk_widget_set_tooltip_text (import_test_button, _("Import"));
+  gtk_button_set_image (GTK_BUTTON (import_test_button), image);
+  gtk_actionable_set_action_name (GTK_ACTIONABLE (import_test_button), "app.import");
+  gtk_header_bar_pack_end (GTK_HEADER_BAR (self->toolbar), import_test_button);
+
+  return import_test_button;
+}
 
 static GtkWidget *
 photos_main_toolbar_add_selection_button (PhotosMainToolbar *self)
@@ -508,6 +548,7 @@ photos_main_toolbar_populate_for_favorites (PhotosMainToolbar *self)
   photos_header_bar_set_mode (PHOTOS_HEADER_BAR (self->toolbar), PHOTOS_HEADER_BAR_MODE_NORMAL);
   self->selection_button = photos_main_toolbar_add_selection_button (self);
   photos_main_toolbar_add_search_button (self);
+  photos_main_toolbar_add_import_test_button(self); //TODO IMPORT This is used only for testing
 
   if (gtk_widget_get_parent (self->searchbar) == NULL)
     gtk_container_add (GTK_CONTAINER (self), self->searchbar);
@@ -599,6 +640,22 @@ photos_main_toolbar_populate_for_preview (PhotosMainToolbar *self)
                            G_CONNECT_SWAPPED);
 }
 
+static void
+photos_main_toolbar_populate_for_import (PhotosMainToolbar *self)
+{
+  GtkWidget *back_button;
+  GtkWidget *add_button;
+
+  gtk_header_bar_set_show_close_button (GTK_HEADER_BAR (self->toolbar), TRUE);
+  photos_header_bar_set_mode (PHOTOS_HEADER_BAR (self->toolbar), PHOTOS_HEADER_BAR_MODE_IMPORT);
+
+  back_button = photos_main_toolbar_add_back_button (self);
+  g_signal_connect_swapped (back_button, "clicked", G_CALLBACK (photos_main_toolbar_back_button_clicked), self);
+
+  g_simple_action_set_enabled (self->gear_menu, TRUE);
+
+  add_button = photos_main_toolbar_add_import_button(self);
+}
 
 static void
 photos_main_toolbar_populate_for_search (PhotosMainToolbar *self)
@@ -721,6 +778,7 @@ static void
 photos_main_toolbar_init (PhotosMainToolbar *self)
 {
   GMenu *selection_menu;
+  GMenu *import_menu;
   GApplication *app;
   GtkBuilder *builder;
   PhotosSearchContextState *state;
@@ -743,9 +801,16 @@ photos_main_toolbar_init (PhotosMainToolbar *self)
   selection_menu = G_MENU (gtk_builder_get_object (builder, "selection-menu"));
   self->selection_menu = gtk_menu_button_new ();
   gtk_menu_button_set_menu_model (GTK_MENU_BUTTON (self->selection_menu), G_MENU_MODEL (selection_menu));
-  g_object_unref (builder);
-
   photos_header_bar_set_selection_menu (PHOTOS_HEADER_BAR (self->toolbar), GTK_BUTTON (self->selection_menu));
+
+  builder = gtk_builder_new_from_resource ("/org/gnome/Photos/import-menu.ui");
+
+  import_menu = G_MENU (gtk_builder_get_object (builder, "import-menu"));
+  self->import_menu = gtk_menu_button_new ();
+  gtk_menu_button_set_menu_model (GTK_MENU_BUTTON (self->import_menu), G_MENU_MODEL (import_menu));
+  photos_header_bar_set_import_menu (PHOTOS_HEADER_BAR (self->toolbar), GTK_BUTTON (self->import_menu));
+
+  g_object_unref (builder);
 
   self->item_mngr = g_object_ref (state->item_mngr);
 
@@ -851,6 +916,8 @@ photos_main_toolbar_reset_toolbar_mode (PhotosMainToolbar *self)
     photos_main_toolbar_populate_for_preview (self);
   else if (window_mode == PHOTOS_WINDOW_MODE_SEARCH)
     photos_main_toolbar_populate_for_search (self);
+  else if(window_mode == PHOTOS_WINDOW_MODE_IMPORT)
+      photos_main_toolbar_populate_for_import(self);
 
   photos_main_toolbar_update_remote_display_button (self);
 

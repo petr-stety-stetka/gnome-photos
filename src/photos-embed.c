@@ -67,6 +67,7 @@ struct _PhotosEmbed
   GIOExtensionPoint *extension_point;
   GtkWidget *collections;
   GtkWidget *favorites;
+  GtkWidget *import;
   GtkWidget *no_results;
   GtkWidget *ntfctn_mngr;
   GtkWidget *overview;
@@ -151,14 +152,18 @@ photos_embed_get_view_container_from_mode (PhotosEmbed *self, PhotosWindowMode m
       view_container = self->overview;
       break;
 
-
     case PHOTOS_WINDOW_MODE_SEARCH:
       view_container = self->search;
+      break;
+
+    case PHOTOS_WINDOW_MODE_IMPORT:
+      view_container = self->import;
       break;
 
     case PHOTOS_WINDOW_MODE_NONE:
     case PHOTOS_WINDOW_MODE_EDIT:
     case PHOTOS_WINDOW_MODE_PREVIEW:
+
     default:
       g_assert_not_reached ();
     }
@@ -301,7 +306,6 @@ photos_embed_prepare_for_preview (PhotosEmbed *self, PhotosWindowMode old_mode)
   gtk_stack_set_visible_child_name (GTK_STACK (self->stack), "preview");
 }
 
-
 static void
 photos_embed_load_finished (PhotosEmbed *self, PhotosBaseItem *item, GeglNode *node)
 {
@@ -391,6 +395,8 @@ photos_embed_notify_visible_child (PhotosEmbed *self)
     mode = PHOTOS_WINDOW_MODE_COLLECTIONS;
   else if (visible_child == self->favorites)
     mode = PHOTOS_WINDOW_MODE_FAVORITES;
+  else if (visible_child == self->import)
+    mode = PHOTOS_WINDOW_MODE_IMPORT;
 
   if (mode == PHOTOS_WINDOW_MODE_NONE)
     return;
@@ -441,6 +447,17 @@ photos_embed_prepare_for_overview (PhotosEmbed *self, PhotosWindowMode old_mode)
 
 
 static void
+photos_embed_prepare_for_import (PhotosEmbed *self, PhotosWindowMode old_mode)
+{
+  if (old_mode == PHOTOS_WINDOW_MODE_PREVIEW)
+    photos_embed_tracker_controllers_set_frozen (self, FALSE);
+
+  photos_spinner_box_stop (PHOTOS_SPINNER_BOX (self->spinner_box));
+  gtk_stack_set_visible_child_name (GTK_STACK (self->stack), "import");
+}
+
+
+static void
 photos_embed_prepare_for_search (PhotosEmbed *self, PhotosWindowMode old_mode)
 {
   if (old_mode == PHOTOS_WINDOW_MODE_PREVIEW)
@@ -468,7 +485,6 @@ photos_embed_query_status_changed (PhotosEmbed *self, gboolean querying)
     photos_spinner_box_stop (PHOTOS_SPINNER_BOX (self->spinner_box));
 }
 
-
 static void
 photos_embed_row_changed (PhotosEmbed *self)
 {
@@ -479,7 +495,8 @@ photos_embed_row_changed (PhotosEmbed *self)
   if (mode == PHOTOS_WINDOW_MODE_COLLECTIONS
       || mode == PHOTOS_WINDOW_MODE_FAVORITES
       || mode == PHOTOS_WINDOW_MODE_OVERVIEW
-      || mode == PHOTOS_WINDOW_MODE_SEARCH)
+      || mode == PHOTOS_WINDOW_MODE_SEARCH
+      || mode == PHOTOS_WINDOW_MODE_IMPORT)
     {
       GtkListStore *model;
       GtkWidget *view_container;
@@ -566,6 +583,10 @@ photos_embed_window_mode_changed (PhotosModeController *mode_cntrlr,
     case PHOTOS_WINDOW_MODE_PREVIEW:
       photos_embed_prepare_for_preview (self, old_mode);
       break;
+
+    case PHOTOS_WINDOW_MODE_IMPORT:
+      photos_embed_prepare_for_import (self, old_mode);
+      goto set_toolbar_model;
 
     case PHOTOS_WINDOW_MODE_SEARCH:
       photos_embed_prepare_for_search (self, old_mode);
@@ -687,6 +708,12 @@ photos_embed_init (PhotosEmbed *self)
   self->search = photos_view_container_new (PHOTOS_WINDOW_MODE_SEARCH, _("Search"));
   gtk_stack_add_named (GTK_STACK (self->stack), self->search, "search");
   model = photos_view_container_get_model (PHOTOS_VIEW_CONTAINER (self->search));
+  g_signal_connect_object (model, "row-inserted", G_CALLBACK (photos_embed_row_changed), self, G_CONNECT_SWAPPED);
+  g_signal_connect_object (model, "row-deleted", G_CALLBACK (photos_embed_row_changed), self, G_CONNECT_SWAPPED);
+
+  self->import = photos_view_container_new (PHOTOS_WINDOW_MODE_IMPORT, _("Import"));
+  gtk_stack_add_named (GTK_STACK (self->stack), self->import, "import");
+  model = photos_view_container_get_model (PHOTOS_VIEW_CONTAINER (self->import));
   g_signal_connect_object (model, "row-inserted", G_CALLBACK (photos_embed_row_changed), self, G_CONNECT_SWAPPED);
   g_signal_connect_object (model, "row-deleted", G_CALLBACK (photos_embed_row_changed), self, G_CONNECT_SWAPPED);
 
